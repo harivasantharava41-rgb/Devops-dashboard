@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps Pipeline Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161c2d;
+    --border: #1e2a42;
+    --accent: #00d4ff;
+    --green: #00e676;
+    --yellow: #ffd740;
+    --red: #ff5252;
+    --purple: #b388ff;
+    --orange: #ff9800;
+    --text: #e8eaf6;
+    --muted: #546e7a;
+    --font-mono: 'Space Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid BG */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0 30px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 30px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .logo h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(0, 230, 118, 0.1);
+    border: 1px solid rgba(0,230,118,0.3);
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 11px; color: var(--green);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .clock { font-size: 12px; color: var(--muted); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.green::after { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+  .stat-card.blue::after  { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+  .stat-card.yellow::after{ background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
+  .stat-card.red::after   { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+  .stat-value { font-family: var(--font-display); font-size: 38px; font-weight: 800; line-height: 1; }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.blue   { color: var(--accent); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red    { color: var(--red); }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  .stat-icon {
+    position: absolute; right: 20px; top: 20px;
+    font-size: 28px; opacity: 0.15;
+  }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .panel-title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  .badge {
+    font-size: 10px; padding: 3px 10px;
+    border-radius: 20px; background: rgba(0,212,255,0.1);
+    color: var(--accent); border: 1px solid rgba(0,212,255,0.2);
+  }
+
+  /* PIPELINE */
+  .pipeline-stages {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 24px;
+  }
+
+  .stage {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center;
+    position: relative;
+  }
+
+  .stage:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 19px; left: 60%;
+    width: calc(80%); height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .stage:not(:last-child).done::after,
+  .stage:not(:last-child).running::after {
+    background: linear-gradient(90deg, var(--green), var(--border));
+  }
+
+  .stage-circle {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; position: relative; z-index: 1;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    margin-bottom: 8px;
+    transition: all 0.3s;
+  }
+
+  .stage.done .stage-circle   { border-color: var(--green); background: rgba(0,230,118,0.1); }
+  .stage.running .stage-circle { border-color: var(--accent); background: rgba(0,212,255,0.1); animation: spin-border 1s linear infinite; }
+  .stage.failed .stage-circle  { border-color: var(--red); background: rgba(255,82,82,0.1); }
+  .stage.pending .stage-circle { opacity: 0.4; }
+
+  @keyframes spin-border {
+    0%   { box-shadow: 0 0 0 2px transparent, 0 0 8px var(--accent); }
+    50%  { box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent); }
+    100% { box-shadow: 0 0 0 2px transparent, 0 0 8px var(--accent); }
+  }
+
+  .stage-name { font-size: 10px; color: var(--muted); text-align: center; }
+  .stage.done .stage-name    { color: var(--green); }
+  .stage.running .stage-name { color: var(--accent); }
+
+  /* BUILD LIST */
+  .build-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .build-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .build-item:hover { border-color: var(--accent); transform: translateX(3px); }
+
+  .build-status {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  .status-success { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-failed  { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .status-running { background: var(--accent); animation: pulse 1s infinite; }
+  .status-pending { background: var(--muted); }
+
+  .build-info { flex: 1; }
+  .build-id { font-size: 12px; color: var(--accent); }
+  .build-branch { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .build-meta { text-align: right; }
+  .build-time  { font-size: 11px; color: var(--muted); }
+  .build-dur   { font-size: 11px; color: var(--text); margin-top: 2px; }
+
+  /* TOOLS PANEL */
+  .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .tool-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s;
+    cursor: default;
+  }
+
+  .tool-card:hover { border-color: var(--accent); }
+
+  .tool-top { display: flex; align-items: center; gap: 8px; }
+  .tool-icon { font-size: 20px; }
+  .tool-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .tool-status { font-size: 10px; color: var(--muted); }
+
+  .tool-bar {
+    height: 3px; border-radius: 2px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .tool-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 1.5s ease;
+  }
+
+  /* BOTTOM GRID */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* SONAR METRICS */
+  .sonar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .sonar-metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .sonar-val { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
+  .sonar-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* AWS INFO */
+  .aws-info { display: flex; flex-direction: column; gap: 10px; }
+
+  .aws-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 11px;
+  }
+
+  .aws-key { color: var(--muted); }
+  .aws-val { color: var(--text); font-weight: 700; }
+
+  /* DOCKER */
+  .docker-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .docker-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px;
+  }
+
+  .docker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .docker-name { flex: 1; color: var(--text); }
+  .docker-port { color: var(--muted); }
+
+  /* PROGRESS RING */
+  .ring-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .ring-text { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--green); }
+  .ring-sub  { font-size: 10px; color: var(--muted); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+  .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+  /* TRIGGER BTN */
+  .trigger-btn {
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border: none; border-radius: 8px;
+    padding: 8px 18px; color: #000;
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.5px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .trigger-btn:hover { opacity: 0.85; transform: scale(0.98); }
+
+  /* TERMINAL LOG */
+  .terminal {
+    background: #060810;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 11px; line-height: 1.8;
+    max-height: 160px; overflow-y: auto;
+    margin-top: 16px;
+  }
+
+  .log-line { display: block; }
+  .log-line .ts    { color: var(--muted); margin-right: 8px; }
+  .log-line .ok    { color: var(--green); }
+  .log-line .info  { color: var(--accent); }
+  .log-line .warn  { color: var(--yellow); }
+  .log-line .err   { color: var(--red); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚙️</div>
+      <h1>DevOps <span>Dashboard</span></h1>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card green">
+      <div class="stat-label">Successful Builds</div>
+      <div class="stat-value green" id="successCount">0</div>
+      <div class="stat-sub">↑ 12% from last week</div>
+      <div class="stat-icon">✅</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Total Deployments</div>
+      <div class="stat-value blue" id="deployCount">0</div>
+      <div class="stat-sub">Across all environments</div>
+      <div class="stat-icon">🚀</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label">Avg Build Time</div>
+      <div class="stat-value yellow">3m 24s</div>
+      <div class="stat-sub">↓ 18s faster than avg</div>
+      <div class="stat-icon">⏱</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Failed Builds</div>
+      <div class="stat-value red" id="failCount">0</div>
+      <div class="stat-sub">2 need attention</div>
+      <div class="stat-icon">❌</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: PIPELINE + BUILDS -->
+    <div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="dot" style="background:var(--accent)"></div>
+            CI/CD Pipeline — Build #47
+          </div>
+          <button class="trigger-btn" onclick="triggerBuild()">▶ Trigger Build</button>
+        </div>
+
+        <div class="pipeline-stages" id="pipelineStages">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="terminal" id="terminalLog">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="dot" style="background:var(--purple)"></div>
+            Recent Builds
+          </div>
+          <span class="badge">Jenkins</span>
+        </div>
+        <div class="build-list" id="buildList">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: TOOLS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background:var(--yellow)"></div>
+          Tool Status
+        </div>
+        <span class="badge">Live</span>
+      </div>
+      <div class="tools-grid" id="toolsGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- SonarQube -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background:var(--green)"></div>
+          SonarQube Analysis
+        </div>
+        <span class="badge">Passed</span>
+      </div>
+      <div class="ring-wrap">
+        <div>
+          <div class="ring-text">A</div>
+          <div class="ring-sub">Quality Gate</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          Coverage: <span style="color:var(--green)">82.4%</span><br>
+          Duplications: <span style="color:var(--green)">1.2%</span><br>
+          Bugs: <span style="color:var(--green)">0</span>
+        </div>
+      </div>
+      <div class="sonar-grid">
+        <div class="sonar-metric">
+          <div class="sonar-val" style="color:var(--green)">A</div>
+          <div class="sonar-lbl">Reliability</div>
+        </div>
+        <div class="sonar-metric">
+          <div class="sonar-val" style="color:var(--green)">A</div>
+          <div class="sonar-lbl">Security</div>
+        </div>
+        <div class="sonar-metric">
+          <div class="sonar-val" style="color:var(--yellow)">B</div>
+          <div class="sonar-lbl">Maintainability</div>
+        </div>
+        <div class="sonar-metric">
+          <div class="sonar-val" style="color:var(--green)">0</div>
+          <div class="sonar-lbl">Vulnerabilities</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AWS EC2 -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background:var(--orange)"></div>
+          AWS EC2 Instance
+        </div>
+        <span class="badge" style="color:var(--orange);border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.1)">ap-south-1</span>
+      </div>
+      <div class="aws-info">
+        <div class="aws-row"><span class="aws-key">Instance Type</span><span class="aws-val">t2.micro (Free Tier)</span></div>
+        <div class="aws-row"><span class="aws-key">OS</span><span class="aws-val">Ubuntu 22.04 LTS</span></div>
+        <div class="aws-row"><span class="aws-key">Status</span><span class="aws-val" style="color:var(--green)">● Running</span></div>
+        <div class="aws-row"><span class="aws-key">Open Ports</span><span class="aws-val">22, 80, 8080</span></div>
+        <div class="aws-row"><span class="aws-key">Region</span><span class="aws-val">Asia Pacific (Mumbai)</span></div>
+        <div class="aws-row"><span class="aws-key">Uptime</span><span class="aws-val" id="uptime">0d 0h 0m</span></div>
+      </div>
+    </div>
+
+    <!-- Docker -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="dot" style="background:var(--accent)"></div>
+          Docker Containers
+        </div>
+        <span class="badge">4 Running</span>
+      </div>
+      <div class="docker-list">
+        <div class="docker-item">
+          <div class="docker-dot status-success"></div>
+          <div class="docker-name">heyd-media-app</div>
+          <div class="docker-port">:8080</div>
+        </div>
+        <div class="docker-item">
+          <div class="docker-dot status-success"></div>
+          <div class="docker-name">mysql-db</div>
+          <div class="docker-port">:3306</div>
+        </div>
+        <div class="docker-item">
+          <div class="docker-dot status-success"></div>
+          <div class="docker-name">jenkins-ci</div>
+          <div class="docker-port">:8081</div>
+        </div>
+        <div class="docker-item">
+          <div class="docker-dot status-success"></div>
+          <div class="docker-name">sonarqube</div>
+          <div class="docker-port">:9000</div>
+        </div>
+        <div class="docker-item">
+          <div class="docker-dot status-pending"></div>
+          <div class="docker-name">nexus-repo</div>
+          <div class="docker-port" style="color:var(--muted)">stopped</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// CLOCK
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000); updateClock();
+
+// UPTIME
+let uptimeSeconds = 3600 * 5 + 23 * 60 + 11;
+setInterval(() => {
+  uptimeSeconds++;
+  const d = Math.floor(uptimeSeconds/86400);
+  const h = Math.floor((uptimeSeconds%86400)/3600);
+  const m = Math.floor((uptimeSeconds%3600)/60);
+  document.getElementById('uptime').textContent = `${d}d ${h}h ${m}m`;
+}, 1000);
+
+// COUNTER ANIMATION
+function animateCount(el, target, duration=1500) {
+  let start = 0;
+  const step = target / (duration/16);
+  const timer = setInterval(() => {
+    start += step;
+    if (start >= target) { el.textContent = target; clearInterval(timer); }
+    else el.textContent = Math.floor(start);
+  }, 16);
+}
+setTimeout(() => {
+  animateCount(document.getElementById('successCount'), 142);
+  animateCount(document.getElementById('deployCount'), 187);
+  animateCount(document.getElementById('failCount'), 8);
+}, 300);
+
+// PIPELINE STAGES
+const stages = [
+  { icon: '📦', name: 'Git Clone', state: 'done' },
+  { icon: '🔨', name: 'Maven Build', state: 'done' },
+  { icon: '🔍', name: 'SonarQube', state: 'done' },
+  { icon: '🐳', name: 'Docker Build', state: 'running' },
+  { icon: '☁️', name: 'AWS Deploy', state: 'pending' },
+  { icon: '🌐', name: 'Tomcat', state: 'pending' },
+];
+
+const ps = document.getElementById('pipelineStages');
+stages.forEach(s => {
+  const el = document.createElement('div');
+  el.className = `stage ${s.state}`;
+  el.innerHTML = `<div class="stage-circle">${s.icon}</div><div class="stage-name">${s.name}</div>`;
+  ps.appendChild(el);
+});
+
+// TERMINAL LOGS
+const logs = [
+  { ts:'09:41:02', cls:'info', msg:'[Git] Cloning from github.com/harivasantharava41-rgb/Heyd-media-app' },
+  { ts:'09:41:05', cls:'ok',   msg:'[Git] Clone successful — branch: main' },
+  { ts:'09:41:06', cls:'info', msg:'[Maven] Running mvn clean package...' },
+  { ts:'09:41:22', cls:'ok',   msg:'[Maven] BUILD SUCCESS — heyd-media-1.0.jar created' },
+  { ts:'09:41:23', cls:'info', msg:'[SonarQube] Sending analysis to sonar.server:9000' },
+  { ts:'09:41:35', cls:'ok',   msg:'[SonarQube] Quality Gate PASSED — Grade A' },
+  { ts:'09:41:36', cls:'warn', msg:'[Docker] Building image harivasanth/heyd-media:latest...' },
+  { ts:'09:41:58', cls:'info', msg:'[Docker] Pushing layers to registry (step 4/7)...' },
+];
+
+const term = document.getElementById('terminalLog');
+logs.forEach((l, i) => {
+  setTimeout(() => {
+    const span = document.createElement('span');
+    span.className = 'log-line';
+    span.innerHTML = `<span class="ts">[${l.ts}]</span><span class="${l.cls}">${l.msg}</span>`;
+    term.appendChild(span);
+    term.scrollTop = term.scrollHeight;
+  }, i * 350);
+});
+
+// BUILDS
+const builds = [
+  { id:'#47', branch:'feature/docker-deploy', status:'running', time:'Just now',   dur:'In progress' },
+  { id:'#46', branch:'main',                  status:'success', time:'2 min ago',  dur:'3m 12s' },
+  { id:'#45', branch:'fix/auth-bug',          status:'failed',  time:'14 min ago', dur:'1m 44s' },
+  { id:'#44', branch:'main',                  status:'success', time:'1 hr ago',   dur:'3m 55s' },
+  { id:'#43', branch:'feature/like-system',   status:'success', time:'3 hrs ago',  dur:'4m 02s' },
+];
+
+const bl = document.getElementById('buildList');
+builds.forEach(b => {
+  const statusClass = { running:'status-running', success:'status-success', failed:'status-failed' }[b.status];
+  bl.innerHTML += `
+    <div class="build-item">
+      <div class="build-status ${statusClass}"></div>
+      <div class="build-info">
+        <div class="build-id">Build ${b.id}</div>
+        <div class="build-branch">⎇ ${b.branch}</div>
+      </div>
+      <div class="build-meta">
+        <div class="build-time">${b.time}</div>
+        <div class="build-dur">${b.dur}</div>
+      </div>
+    </div>`;
+});
+
+// TOOLS
+const tools = [
+  { icon:'🔧', name:'Jenkins',   status:'Build #47 Running', pct:68, color:'var(--accent)' },
+  { icon:'📦', name:'Maven',     status:'Build Success',     pct:100, color:'var(--green)' },
+  { icon:'🔍', name:'SonarQube', status:'Grade: A',          pct:100, color:'var(--green)' },
+  { icon:'🐳', name:'Docker',    status:'4 Containers Up',   pct:80,  color:'var(--accent)' },
+  { icon:'☁️', name:'AWS EC2',   status:'Running',           pct:100, color:'var(--green)' },
+  { icon:'🌐', name:'Tomcat',    status:'Awaiting Deploy',   pct:20,  color:'var(--yellow)' },
+  { icon:'🐙', name:'GitHub',    status:'Synced',            pct:100, color:'var(--purple)' },
+  { icon:'🗄️', name:'MySQL',     status:'Connected',         pct:100, color:'var(--green)' },
+];
+
+const tg = document.getElementById('toolsGrid');
+tools.forEach(t => {
+  tg.innerHTML += `
+    <div class="tool-card">
+      <div class="tool-top">
+        <span class="tool-icon">${t.icon}</span>
+        <div>
+          <div class="tool-name">${t.name}</div>
+          <div class="tool-status">${t.status}</div>
+        </div>
+      </div>
+      <div class="tool-bar">
+        <div class="tool-fill" style="width:0%;background:${t.color}" data-pct="${t.pct}"></div>
+      </div>
+    </div>`;
+});
+
+setTimeout(() => {
+  document.querySelectorAll('.tool-fill').forEach(el => {
+    el.style.width = el.dataset.pct + '%';
+  });
+}, 500);
+
+// TRIGGER BUILD
+function triggerBuild() {
+  const term = document.getElementById('terminalLog');
+  const ts = new Date().toLocaleTimeString('en-GB');
+  const newLog = document.createElement('span');
+  newLog.className = 'log-line';
+  newLog.innerHTML = `<span class="ts">[${ts}]</span><span class="warn">▶ Manual build triggered by user...</span>`;
+  term.appendChild(newLog);
+  term.scrollTop = term.scrollHeight;
+  setTimeout(() => {
+    const l2 = document.createElement('span');
+    l2.className = 'log-line';
+    l2.innerHTML = `<span class="ts">[${ts}]</span><span class="info">[Jenkins] Starting pipeline for branch: main</span>`;
+    term.appendChild(l2);
+    term.scrollTop = term.scrollHeight;
+  }, 800);
+}
+</script>
+</body>
+</html>
