@@ -1,6 +1,6 @@
 ## Updates
-- Week 1: Added dashboard with stat cards
-- Week 1: Added skills page with progress bars
+Added dashboard with stat cards
+Added skills page with progress bars
 # Devops-dashboard
 Real-time DevOps CI/CD monitoring dashboard built with HTML, CSS &amp; JavaScript. Visualizes Jenkins pipelines, SonarQube code quality, Docker containers, and AWS EC2 status. Hosted on GitHub Pages.
 
